@@ -2579,6 +2579,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "libgcrypt-sys"
+version = "0.1.0"
+
+[[package]]
 name = "libloading"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2816,6 +2820,7 @@ name = "nasl-c-lib"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "libgcrypt-sys",
 ]
 
 [[package]]
