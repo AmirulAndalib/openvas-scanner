@@ -1,9 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use scannerlib::nasl::{
-    Loader,
-    syntax::{LoadError, load_non_utf8_path},
-};
+use scannerlib::nasl::FSPluginLoader;
 
 use crate::error::CliError;
 
@@ -13,29 +10,21 @@ pub struct LinterArgs {
     pub path: PathBuf,
 }
 
-pub struct NonUtf8Loader;
-
-impl Loader for NonUtf8Loader {
-    fn load(&self, key: &str) -> Result<String, LoadError> {
-        load_non_utf8_path(key)
-    }
-
-    fn root_path(&self) -> Result<String, LoadError> {
-        Ok(".".to_owned())
-    }
-}
-
-pub(super) fn get_files(path: &Path) -> Result<Vec<PathBuf>, CliError> {
+pub(super) fn get_files_and_loader(
+    root: &Path,
+) -> Result<(FSPluginLoader, Vec<PathBuf>), CliError> {
     let mut files = vec![];
-    if path.is_file() {
-        files.push(path.into())
+    let loader = if root.is_file() {
+        files.push(root.into());
+        FSPluginLoader::new(root.parent().unwrap())
     } else {
-        for e in walkdir::WalkDir::new(path) {
+        for e in walkdir::WalkDir::new(root) {
             let e = e.map_err(std::io::Error::from)?;
             if let Some("nasl") | Some("inc") = e.path().extension().and_then(|ext| ext.to_str()) {
-                files.push(e.path().to_owned())
+                files.push(e.path().strip_prefix(&root).unwrap().to_owned());
             }
         }
-    }
-    Ok(files)
+        FSPluginLoader::new(root)
+    };
+    Ok((loader, files))
 }
